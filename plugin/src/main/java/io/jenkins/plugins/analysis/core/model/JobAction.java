@@ -2,7 +2,10 @@ package io.jenkins.plugins.analysis.core.model;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Iterator;
 
+import edu.hm.hafner.analysis.Severity;
+import edu.hm.hafner.echarts.BuildResult;
 import edu.hm.hafner.echarts.ChartModelConfiguration;
 import edu.hm.hafner.echarts.JacksonFacade;
 import edu.hm.hafner.echarts.LinesChartModel;
@@ -18,6 +21,7 @@ import jenkins.model.Jenkins;
 
 import io.jenkins.plugins.analysis.core.charts.SeverityTrendChart;
 import io.jenkins.plugins.analysis.core.charts.ToolsTrendChart;
+import io.jenkins.plugins.analysis.core.util.AnalysisBuildResult;
 import io.jenkins.plugins.analysis.core.util.TrendChartType;
 import io.jenkins.plugins.echarts.AsyncTrendChart;
 
@@ -201,7 +205,27 @@ public class JobAction implements Action, AsyncTrendChart {
     public boolean isTrendVisible() {
         return trendChartType != TrendChartType.NONE && createBuildHistory().hasMultipleResults();
     }
-
+    /**
+     * Returns whether the number of warnings from build history is 0
+     *
+     * @return (@code true} if the number of warnings is 0, false otherwise
+     */
+    public boolean noWarnings(){
+        History pastResults = createBuildHistory();//Get all the past build history
+        if(pastResults instanceof AnalysisHistory){
+            Iterator<BuildResult<AnalysisBuildResult>> it = pastResults.iterator();
+            while(it.hasNext()){
+                BuildResult<AnalysisBuildResult> nextResult = it.next();
+                //This code below may need modification according to BuildResult
+                if(nextResult.getResult().getTotalSize() - nextResult.getResult().getTotalSizeOf(Severity.ERROR)!= 0){
+                    return false;
+                }
+            }
+            return true;
+        }else{
+            return true;
+        }
+    }
     @Override
     public String toString() {
         return String.format("%s (%s)", getClass().getName(), labelProvider.getName());
